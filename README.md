@@ -54,7 +54,7 @@ Delete an appointment
 }
 ```
 
-## 💡 Future Improvements
+## Future Improvements
 
 * Add authentication (login system)
 * Connect to frontend UI
