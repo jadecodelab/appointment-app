@@ -14,6 +14,13 @@ This project is a portfolio demo and is not intended for real patient data.
 
 ![Maple Grove Family Clinic appointment app](screenshots/app.png)
 
+## Project Highlights
+
+* Built a full-stack appointment booking flow with Flask, SQLite, and vanilla JavaScript
+* Designed a patient-facing clinic UI with service categories, clinic hours, and contact details
+* Added business rules for open hours, preset time slots, Sunday closure, and double-booking prevention
+* Prepared the app for Render deployment with Gunicorn and a health check endpoint
+  
 ## Features
 
 * Create appointments (POST)
@@ -53,9 +60,6 @@ Manual Render settings:
 * Runtime: Python
 * Build command: `pip install -r requirements.txt`
 * Start command: `gunicorn app:app`
-* Health check path: `/health`
-
-The default SQLite database is suitable for a portfolio demo. Do not use this deployment for real patient information.
 
 ## API Endpoints
 
@@ -71,7 +75,7 @@ Create a new patient visit.
 
 ```json
 {
-  "name": "Jade Chen",
+  "name": "Jade Chung",
   "phone": "(555) 284-0101",
   "email": "jade@example.com",
   "service": "Primary Care Visit",
@@ -116,5 +120,5 @@ Delete an appointment by ID.
 
 ## Future Improvements
 
-* Add authentication (login system)
-* Integrate with voice assistant system
+* Add edit/reschedule support
+* Add a day-view calendar for available and booked slots
