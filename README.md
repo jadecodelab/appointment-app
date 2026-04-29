@@ -9,6 +9,7 @@ A RESTful backend API for managing appointment scheduling with conflict detectio
 * Create appointments (POST)
 * View all appointments (GET)
 * Delete appointments (DELETE)
+* Browser UI for booking and managing appointments
 * Prevent double booking (same date & time)
 * Input validation and error handling
 * SQLite database for persistent storage
@@ -18,14 +19,21 @@ A RESTful backend API for managing appointment scheduling with conflict detectio
 * Python
 * Flask
 * SQLite
+* HTML/CSS/JavaScript
 
 ## How to Run
 
 ```bash
-python app.py
+python -m venv .venv
+.venv\Scripts\python -m pip install -r requirements.txt
+.venv\Scripts\python app.py
 ```
 
+Open `http://127.0.0.1:5000` in your browser.
+
 ## API Endpoints
+
+The browser UI is served from `/`.
 
 ### GET /appointments
 
@@ -54,8 +62,11 @@ Delete an appointment
 }
 ```
 
+### DELETE /appointments/&lt;id&gt;
+
+Delete an appointment by ID.
+
 ## Future Improvements
 
 * Add authentication (login system)
-* Connect to frontend UI
 * Integrate with voice assistant system

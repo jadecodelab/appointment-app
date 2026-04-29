@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Appointment App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <main class="app-shell">
+        <header class="topbar">
+            <div>
+                <p class="eyebrow">Scheduling</p>
+                <h1>Appointment App</h1>
+            </div>
+            <div class="summary" aria-live="polite">
+                <span id="appointment-count">0</span>
+                <span>booked</span>
+            </div>
+        </header>
+
+        <section class="workspace" aria-label="Appointment workspace">
+            <form class="appointment-form" id="appointment-form">
+                <div class="form-header">
+                    <h2>New Appointment</h2>
+                    <p id="form-message" class="message" role="status" aria-live="polite"></p>
+                </div>
+
+                <label for="name">Name</label>
+                <input id="name" name="name" type="text" autocomplete="name" required>
+
+                <div class="field-grid">
+                    <div>
+                        <label for="date">Date</label>
+                        <input id="date" name="date" type="date" required>
+                    </div>
+                    <div>
+                        <label for="time">Time</label>
+                        <input id="time" name="time" type="time" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="primary-action" id="submit-button">Book Appointment</button>
+            </form>
+
+            <section class="schedule-panel" aria-labelledby="schedule-heading">
+                <div class="panel-header">
+                    <h2 id="schedule-heading">Schedule</h2>
+                    <button type="button" class="icon-button" id="refresh-button" aria-label="Refresh appointments" title="Refresh appointments">
+                        <span class="refresh-icon" aria-hidden="true"></span>
+                    </button>
+                </div>
+
+                <div class="appointment-list" id="appointment-list" aria-live="polite"></div>
+                <p class="empty-state" id="empty-state">No appointments booked.</p>
+            </section>
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

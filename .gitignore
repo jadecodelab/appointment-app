@@ -1,4 +1,7 @@
 venv/
+.venv/
+.tmp/
+/tmp*/
 __pycache__/
 *.pyc
 appointments.db

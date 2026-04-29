@@ -1,10 +1,18 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import sqlite3
 
 app = Flask(__name__)
+DATABASE = 'appointments.db'
+
+
+def get_db_connection():
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    return conn
+
 
 def init_db():
-    conn = sqlite3.connect('appointments.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
 
     cursor.execute('''
@@ -19,21 +27,23 @@ def init_db():
     conn.commit()
     conn.close()
 
+
 @app.route('/')
 def home():
-    return "Welcome to Appointment API!"
+    return render_template('index.html')
+
 
 @app.route('/health')
 def health():
     return "OK"
 
-# ✅ GET all appointments
+
 @app.route('/appointments', methods=['GET'])
 def get_appointments():
-    conn = sqlite3.connect('appointments.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT name, date, time FROM appointments")
+    cursor.execute("SELECT id, name, date, time FROM appointments ORDER BY date, time")
     rows = cursor.fetchall()
 
     conn.close()
@@ -41,29 +51,32 @@ def get_appointments():
     appointments = []
     for row in rows:
         appointments.append({
-            "name": row[0],
-            "date": row[1],
-            "time": row[2]
+            "id": row["id"],
+            "name": row["name"],
+            "date": row["date"],
+            "time": row["time"]
         })
 
     return jsonify(appointments)
 
-# ✅ POST new appointment
+
 @app.route('/appointments', methods=['POST'])
 def add_appointment():
-    data = request.json
+    data = request.get_json(silent=True) or {}
 
     name = data.get("name")
     date = data.get("date")
     time = data.get("time")
 
+    if isinstance(name, str):
+        name = name.strip()
+
     if not name or not date or not time:
         return jsonify({"error": "Missing required fields"}), 400
 
-    conn = sqlite3.connect('appointments.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
 
-    # ✅ Check conflict
     cursor.execute(
         "SELECT * FROM appointments WHERE date=? AND time=?",
         (date, time)
@@ -74,21 +87,49 @@ def add_appointment():
         conn.close()
         return jsonify({"error": "Time slot already booked"}), 400
 
-    # ✅ Insert into DB
     cursor.execute(
         "INSERT INTO appointments (name, date, time) VALUES (?, ?, ?)",
         (name, date, time)
     )
+    appointment_id = cursor.lastrowid
 
     conn.commit()
     conn.close()
 
-    return jsonify({"message": "Appointment added"}), 201
+    return jsonify({
+        "message": "Appointment added",
+        "appointment": {
+            "id": appointment_id,
+            "name": name,
+            "date": date,
+            "time": time
+        }
+    }), 201
 
-# Delete Appointment
+
+@app.route('/appointments/<int:appointment_id>', methods=['DELETE'])
+def delete_appointment_by_id(appointment_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM appointments WHERE id=?", (appointment_id,))
+    existing = cursor.fetchone()
+
+    if not existing:
+        conn.close()
+        return jsonify({"error": "Appointment not found"}), 404
+
+    cursor.execute("DELETE FROM appointments WHERE id=?", (appointment_id,))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": "Appointment deleted"}), 200
+
+
 @app.route('/appointments', methods=['DELETE'])
 def delete_appointment():
-    data = request.json
+    data = request.get_json(silent=True) or {}
 
     date = data.get("date")
     time = data.get("time")
@@ -96,10 +137,9 @@ def delete_appointment():
     if not date or not time:
         return jsonify({"error": "Missing date or time"}), 400
 
-    conn = sqlite3.connect('appointments.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Check if appointment exists
     cursor.execute(
         "SELECT * FROM appointments WHERE date=? AND time=?",
         (date, time)
@@ -110,7 +150,6 @@ def delete_appointment():
         conn.close()
         return jsonify({"error": "Appointment not found"}), 404
 
-    # Delete appointment
     cursor.execute(
         "DELETE FROM appointments WHERE date=? AND time=?",
         (date, time)
@@ -121,6 +160,7 @@ def delete_appointment():
 
     return jsonify({"message": "Appointment deleted"}), 200
 
+
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False)
