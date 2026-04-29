@@ -5,6 +5,23 @@ const list = document.querySelector("#appointment-list");
 const emptyState = document.querySelector("#empty-state");
 const count = document.querySelector("#appointment-count");
 const refreshButton = document.querySelector("#refresh-button");
+const dateInput = document.querySelector("#date");
+const timeSelect = document.querySelector("#time");
+
+const weekdaySlots = [
+    "08:00", "08:30", "09:00", "09:30",
+    "10:00", "10:30", "11:00", "11:30",
+    "12:00", "12:30", "13:00", "13:30",
+    "14:00", "14:30", "15:00", "15:30",
+    "16:00", "16:30"
+];
+
+const saturdaySlots = [
+    "09:00", "09:30", "10:00", "10:30",
+    "11:00", "11:30", "12:00", "12:30"
+];
+
+let currentAppointments = [];
 
 function setMessage(text, type = "") {
     message.textContent = text;
@@ -14,6 +31,7 @@ function setMessage(text, type = "") {
 function formatAppointmentDate(value) {
     const date = new Date(`${value}T00:00:00`);
     return new Intl.DateTimeFormat(undefined, {
+        weekday: "short",
         month: "short",
         day: "numeric",
         year: "numeric"
@@ -31,6 +49,92 @@ function formatAppointmentTime(value) {
     }).format(date);
 }
 
+function getSlotsForDate(value) {
+    if (!value) {
+        return [];
+    }
+
+    const date = new Date(`${value}T00:00:00`);
+    const weekday = date.getDay();
+
+    if (weekday >= 1 && weekday <= 5) {
+        return weekdaySlots;
+    }
+
+    if (weekday === 6) {
+        return saturdaySlots;
+    }
+
+    return [];
+}
+
+function setTodayMinimumDate() {
+    const today = new Date();
+    const offset = today.getTimezoneOffset() * 60000;
+    const localDate = new Date(today.getTime() - offset).toISOString().slice(0, 10);
+    dateInput.min = localDate;
+}
+
+function getBookedSlots(dateValue) {
+    return new Set(
+        currentAppointments
+            .filter((appointment) => appointment.date === dateValue)
+            .map((appointment) => appointment.time)
+    );
+}
+
+function populateTimeSlots() {
+    const selectedDate = dateInput.value;
+    const slots = getSlotsForDate(selectedDate);
+    const bookedSlots = getBookedSlots(selectedDate);
+
+    timeSelect.replaceChildren();
+
+    if (!selectedDate) {
+        timeSelect.disabled = true;
+        timeSelect.append(new Option("Choose a date first", ""));
+        return;
+    }
+
+    if (slots.length === 0) {
+        timeSelect.disabled = true;
+        timeSelect.append(new Option("Clinic closed", ""));
+        return;
+    }
+
+    timeSelect.disabled = false;
+    timeSelect.append(new Option("Select a time", ""));
+
+    slots.forEach((slot) => {
+        const label = bookedSlots.has(slot)
+            ? `${formatAppointmentTime(slot)} - booked`
+            : formatAppointmentTime(slot);
+        const option = new Option(label, slot);
+        option.disabled = bookedSlots.has(slot);
+        timeSelect.append(option);
+    });
+}
+
+function formatPatientContact(appointment) {
+    return [appointment.phone, appointment.email]
+        .filter(Boolean)
+        .join(" | ");
+}
+
+function getServiceClass(service) {
+    const serviceGroups = {
+        "Primary Care Visit": "service-general",
+        "Follow-Up Visit": "service-general",
+        "Annual Wellness Exam": "service-preventive",
+        "Vaccination Appointment": "service-preventive",
+        "Pediatric Checkup": "service-family",
+        "Sick Visit": "service-sick",
+        "Lab Results Review": "service-review"
+    };
+
+    return serviceGroups[service] || "service-general";
+}
+
 function renderAppointments(appointments) {
     list.replaceChildren();
     count.textContent = appointments.length;
@@ -43,11 +147,20 @@ function renderAppointments(appointments) {
         const details = document.createElement("div");
         details.className = "appointment-details";
 
-        const name = document.createElement("h3");
-        name.textContent = appointment.name;
+        const patientName = document.createElement("h3");
+        patientName.className = "patient-name";
+        patientName.textContent = appointment.name;
+
+        const service = document.createElement("span");
+        service.className = `service-title ${getServiceClass(appointment.service)}`;
+        service.textContent = appointment.service;
 
         const schedule = document.createElement("p");
+        schedule.className = "appointment-time";
         schedule.textContent = `${formatAppointmentDate(appointment.date)} at ${formatAppointmentTime(appointment.time)}`;
+
+        const patient = document.createElement("p");
+        patient.textContent = formatPatientContact(appointment);
 
         const deleteButton = document.createElement("button");
         deleteButton.type = "button";
@@ -57,7 +170,19 @@ function renderAppointments(appointments) {
         deleteButton.title = "Delete appointment";
         deleteButton.addEventListener("click", () => deleteAppointment(appointment.id));
 
-        details.append(name, schedule);
+        details.append(patientName, service, schedule);
+
+        if (patient.textContent) {
+            details.append(patient);
+        }
+
+        if (appointment.reason) {
+            const reason = document.createElement("p");
+            reason.className = "visit-reason";
+            reason.textContent = appointment.reason;
+            details.append(reason);
+        }
+
         item.append(details, deleteButton);
         list.append(item);
     });
@@ -85,8 +210,9 @@ async function loadAppointments() {
     refreshButton.disabled = true;
 
     try {
-        const appointments = await requestJson("/appointments");
-        renderAppointments(appointments);
+        currentAppointments = await requestJson("/appointments");
+        renderAppointments(currentAppointments);
+        populateTimeSlots();
     } catch (error) {
         setMessage(error.message, "error");
     } finally {
@@ -114,8 +240,12 @@ form.addEventListener("submit", async (event) => {
     const formData = new FormData(form);
     const appointment = {
         name: formData.get("name").trim(),
+        phone: formData.get("phone").trim(),
+        email: formData.get("email").trim(),
+        service: formData.get("service"),
         date: formData.get("date"),
-        time: formData.get("time")
+        time: formData.get("time") || "",
+        reason: formData.get("reason").trim()
     };
 
     try {
@@ -125,8 +255,9 @@ form.addEventListener("submit", async (event) => {
         });
 
         form.reset();
+        populateTimeSlots();
         await loadAppointments();
-        setMessage("Appointment booked.", "success");
+        setMessage("Visit booked.", "success");
     } catch (error) {
         setMessage(error.message, "error");
     } finally {
@@ -134,5 +265,9 @@ form.addEventListener("submit", async (event) => {
     }
 });
 
+dateInput.addEventListener("change", populateTimeSlots);
 refreshButton.addEventListener("click", loadAppointments);
+
+setTodayMinimumDate();
+populateTimeSlots();
 loadAppointments();
