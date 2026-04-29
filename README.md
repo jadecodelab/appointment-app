@@ -4,6 +4,10 @@
 
 A patient-facing clinic booking app for Maple Grove Family Clinic with service selection, preset clinic time slots, conflict detection, and persistent storage.
 
+## Screenshot
+
+![Maple Grove Family Clinic appointment app](screenshots/app.png)
+
 ## Features
 
 * Create appointments (POST)
