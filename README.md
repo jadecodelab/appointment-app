@@ -4,6 +4,8 @@
 
 A patient-facing clinic booking app for Maple Grove Family Clinic with service selection, preset clinic time slots, conflict detection, and persistent storage.
 
+This project is a portfolio demo and is not intended for real patient data.
+
 ## Screenshot
 
 ![Maple Grove Family Clinic appointment app](screenshots/app.png)
@@ -36,6 +38,20 @@ python -m venv .venv
 ```
 
 Open `http://127.0.0.1:5000` in your browser.
+
+## Deploy on Render
+
+This repo includes a `render.yaml` blueprint for Render.
+
+Manual Render settings:
+
+* Service type: Web Service
+* Runtime: Python
+* Build command: `pip install -r requirements.txt`
+* Start command: `gunicorn app:app`
+* Health check path: `/health`
+
+The default SQLite database is suitable for a portfolio demo. Do not use this deployment for real patient information.
 
 ## API Endpoints
 

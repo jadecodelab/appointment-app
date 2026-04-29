@@ -1,9 +1,10 @@
 from datetime import datetime
 from flask import Flask, request, jsonify, render_template
+import os
 import sqlite3
 
 app = Flask(__name__)
-DATABASE = 'appointments.db'
+DATABASE = os.environ.get('DATABASE_PATH', 'appointments.db')
 
 SERVICES = [
     "Primary Care Visit",
@@ -36,6 +37,10 @@ def get_db_connection():
 
 
 def init_db():
+    database_dir = os.path.dirname(DATABASE)
+    if database_dir:
+        os.makedirs(database_dir, exist_ok=True)
+
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -264,6 +269,9 @@ def delete_appointment():
     return jsonify({"message": "Appointment deleted"}), 200
 
 
+init_db()
+
+
 if __name__ == '__main__':
-    init_db()
-    app.run(debug=False, use_reloader=False)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
