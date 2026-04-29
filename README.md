@@ -6,6 +6,10 @@ A patient-facing clinic booking app for Maple Grove Family Clinic with service s
 
 This project is a portfolio demo and is not intended for real patient data.
 
+## Live Demo
+
+[View the deployed app](https://maple-grove-family-clinic.onrender.com/)
+
 ## Screenshot
 
 ![Maple Grove Family Clinic appointment app](screenshots/app.png)
