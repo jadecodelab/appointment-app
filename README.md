@@ -8,6 +8,8 @@ This project is a portfolio demo and is not intended for real patient data.
 
 ## Live Demo
 
+Note: First load may take a moment because the app is hosted on Render’s free tier.
+
 [View the deployed app](https://maple-grove-family-clinic.onrender.com/)
 
 ## Screenshot
